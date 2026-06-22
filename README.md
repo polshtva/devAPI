@@ -1,50 +1,74 @@
 # 🌐 DevAPI — Backend сервис с AI-интеграцией
 
-Backend-сервис для персонального лендинга разработчика. Реализует REST API для формы обратной связи, отправку писем, логирование, rate limiting, PostgreSQL-хранение и интеграцию с AI через OpenRouter (Groq).
+https://loyal-harmony-devapi.up.railway.app/
+
+Backend-сервис для персонального лендинга разработчика. Проект предоставляет REST API для обработки обращений пользователей, отправки email-уведомлений, логирования запросов, ограничения частоты обращений и AI-анализа сообщений.
+
+В качестве хранилища используются JSON-файлы, что позволяет работать без подключения базы данных.
 
 ---
 
-## 🚀 Стек технологий
+## Стек технологий
 
 - PHP 8.1+
 - Laravel 10
-- PostgreSQL
 - Composer
 - OpenRouter API
 - Groq LLaMA 3.1 8B Instant
 - Yandex SMTP
-- File-based Logging
-- Railway
+- JSON Storage
 
 ---
 
-## 📁 Архитектура проекта
+## Архитектура проекта
 
 ```text
 app/
 ├── Http/
 │   ├── Controllers/
+│   │   ├── Api/
+│   │   │   ├── ContactController.php
+│   │   │   └── MetricsController.php
 │   └── Middleware/
-├── Models/
+│       ├── RequestCounterMiddleware.php
+│       ├── RequestLoggerMiddleware.php
+│       └── RateLimitMiddleware.php
+│
 ├── Services/
 │   ├── Ai/
-│   └── Mail/
-database/
-├── migrations/
+│   │   └── AiService.php
+│   └── ContactService.php
+│
+├── Repositories/
+│   └── ContactRequestRepository.php
+│
+├── Mail/
+│   ├── ContactOwnerMail.php
+│   └── ContactUserCopyMail.php
+│
+resources/
+└── views/
+    └── emails/
+        ├── owner.blade.php
+        └── user.blade.php
+
 routes/
-├── api.php
+└── api.php
+
 storage/
-Procfile
-composer.json
+├── app/
+│   ├── contact_requests.json
+│   └── metrics.json
+└── logs/
 ```
 
 ---
 
-## 🔌 API Endpoints
+## API
 
 ### POST `/api/contact`
 
-Создание обращения через форму обратной связи.
+Отправка обращения пользователя.
 
 #### Request
 
@@ -61,9 +85,8 @@ composer.json
 
 ```json
 {
-    "id": 17,
     "sentiment": "positive",
-    "reply": "Спасибо за обращение! ...",
+    "reply": "Спасибо за обращение!",
     "ai_used": true
 }
 ```
@@ -72,7 +95,7 @@ composer.json
 
 ### GET `/api/health`
 
-Проверка работоспособности сервиса.
+Проверка состояния сервиса.
 
 #### Response
 
@@ -88,33 +111,84 @@ composer.json
 
 Получение статистики обращений.
 
+#### Response
+
+```json
+{
+    "total_requests": 125
+}
+```
+
 ---
 
-## 🧠 AI-интеграция
+## AI-интеграция
 
-Сервис использует AI для:
+Для обработки пользовательских сообщений используется OpenRouter.
 
-- Анализа тональности сообщения
-- Генерации ответа пользователю
-- Автоматического fallback при недоступности AI
-
-### Используемая модель
+Используемая модель:
 
 ```text
 groq/llama-3.1-8b-instant
 ```
 
+Возможности AI:
+
+- анализ тональности сообщения;
+- генерация ответа пользователю;
+- обработка ошибок AI-сервиса;
+- fallback-механизм при недоступности модели.
+
 ---
 
-## 🛡 Rate Limiting
+## Хранение данных
 
-Защита от спама реализована через ограничение количества запросов по IP.
+Проект не использует СУБД.
 
-Файл хранения лимитов:
+Все данные сохраняются в JSON-файлы:
 
 ```text
-storage/app/rate_limit.json
+storage/app/contact_requests.json
+storage/app/metrics.json
 ```
+
+Это позволяет быстро развернуть приложение без настройки базы данных.
+
+---
+
+## Email-уведомления
+
+После получения обращения автоматически отправляются два письма:
+
+1. Владельцу сайта.
+2. Пользователю (копия обращения).
+
+Для формирования писем используются Blade-шаблоны:
+
+```text
+resources/views/emails/owner.blade.php
+resources/views/emails/user.blade.php
+```
+
+Отправка осуществляется через Yandex SMTP.
+
+---
+
+## Логирование
+
+Каждый запрос логируется средствами Laravel.
+
+Файлы логов:
+
+```text
+storage/logs/laravel.log
+storage/logs/laravel-*.log
+```
+
+---
+
+## Rate Limiting
+
+Для защиты от спама реализовано ограничение количества запросов по IP-адресу.
 
 При превышении лимита API возвращает:
 
@@ -124,122 +198,66 @@ storage/app/rate_limit.json
 
 ---
 
-## 📝 Логирование
+## Установка и запуск
 
-Каждый запрос записывается в лог:
-
-```text
-storage/logs/requests.log
-```
-
----
-
-## 📧 Email-уведомления
-
-После получения обращения отправляются два письма:
-
-1. Владельцу сайта
-2. Пользователю (копия обращения)
-
-Почтовый провайдер:
-
-```text
-Yandex SMTP
-```
-
----
-
-## 🗄 PostgreSQL
-
-### Настройки подключения
-
-```env
-DB_CONNECTION=pgsql
-DB_HOST=${PGHOST}
-DB_PORT=${PGPORT}
-DB_DATABASE=${PGDATABASE}
-DB_USERNAME=${PGUSER}
-DB_PASSWORD=${PGPASSWORD}
-```
-
-### Выполнение миграций
-
-```bash
-php artisan migrate --force
-```
-
----
-
-## ⚙️ Установка и запуск локально
-
-### 1. Клонировать проект
+### Клонирование проекта
 
 ```bash
 git clone https://github.com/polshtva/devAPI.git
 cd devAPI
 ```
 
-### 2. Установить зависимости
+### Установка зависимостей
 
 ```bash
 composer install
 ```
 
-### 3. Создать .env
+### Создание файла окружения
 
 ```bash
 cp .env.example .env
 php artisan key:generate
 ```
 
-### 4. Настроить переменные окружения
+### Настройка переменных окружения
 
 ```env
-APP_ENV=local
-APP_DEBUG=true
-
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=dev_landing
-DB_USERNAME=postgres
-DB_PASSWORD=password
-
 MAIL_HOST=smtp.yandex.ru
 MAIL_PORT=465
-MAIL_USERNAME=it-platform@yandex.ru
-MAIL_PASSWORD=password
+MAIL_USERNAME=your-email@yandex.ru
+MAIL_PASSWORD=your-password
 MAIL_ENCRYPTION=ssl
 
-AI_PROVIDER=openrouter
 OPENROUTER_API_KEY=sk-or-xxxxxxxxxxxxxxxx
 ```
 
-### 5. Запустить сервер
+### Запуск приложения
 
 ```bash
 php artisan serve
 ```
 
-## ✔ Реализовано
+После запуска API будет доступно по адресу:
 
-- REST API
-- Валидация запросов
-- PostgreSQL
-- Отправка email
-- Логирование
-- Rate limiting
-- AI-интеграция
-- Fallback-механизм
-- Health Check
-- Metrics API
-- Чистая архитектура
-- Деплой на Railway
+```text
+http://127.0.0.1:8000
+```
 
 ---
 
-## 📄 Лицензия
+## ✔ Реализовано
 
-Проект создан для использования в качестве backend-части персонального сайта разработчика.
-
-© 2025 DevAPI
+- REST API
+- Валидация входящих данных
+- JSON-хранилище без базы данных
+- Email-уведомления
+- Blade-шаблоны писем
+- Логирование запросов
+- Rate Limiting по IP
+- AI-анализ сообщений
+- Генерация ответов через LLM
+- Fallback-механизм
+- Health Check Endpoint
+- Metrics Endpoint
+- Сервисная архитектура Laravel
