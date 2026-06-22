@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\RequestLoggerMiddleware::class,
             \App\Http\Middleware\RateLimitMiddleware::class,
+            \App\Http\Middleware\RequestCounterMiddleware::class,
         ]);
 
         $middleware->alias([

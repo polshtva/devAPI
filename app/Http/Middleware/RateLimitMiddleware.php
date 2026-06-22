@@ -3,25 +3,22 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Symfony\Component\HttpFoundation\Response;
 
 class RateLimitMiddleware
 {
-    public function handle(Request $request, Closure $next)
+    public function handle($request, Closure $next)
     {
-        $ip  = $request->ip();
-        $key = 'contact:' . $ip;
-        $max = 5; // 5 запросов в минуту
+        $key = 'rate_limit:' . $request->ip();
 
-        $count = cache()->get($key, 0);
-
-        if ($count >= $max) {
+        if (RateLimiter::tooManyAttempts($key, 60)) {
             return response()->json([
-                'message' => 'Too many requests',
-            ], 429);
+                'message' => 'Too many requests'
+            ], Response::HTTP_TOO_MANY_REQUESTS);
         }
 
-        cache()->put($key, $count + 1, now()->addMinute());
+        RateLimiter::hit($key, 60);
 
         return $next($request);
     }
