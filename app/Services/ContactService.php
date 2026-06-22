@@ -20,7 +20,7 @@ class ContactService
         // 1) AI анализ + ответ
         $aiResult = $this->ai->analyzeAndReply($data['comment'], $data['name']);
 
-        // 2) Сохраняем в БД
+        // 2) Сохраняем в файл (НЕ в БД)
         $saved = $this->repo->create([
             ...$data,
             'sentiment' => $aiResult['sentiment'],
@@ -29,23 +29,27 @@ class ContactService
         ]);
 
         // 3) Письмо владельцу
-        Mail::to(config('mail.owner.address'))->send(new ContactOwnerMail([
-            'request' => $saved,
-            'ai'      => $aiResult,
-        ]));
+        Mail::to(config('mail.owner.address'))->send(
+            new ContactOwnerMail([
+                'request' => $saved,
+                'ai'      => $aiResult,
+            ])
+        );
 
         // 4) Копия пользователю
-        Mail::to($saved->email)->send(new ContactUserCopyMail([
-            'request' => $saved,
-            'ai'      => $aiResult,
-        ]));
+        Mail::to($saved['email'])->send(
+            new ContactUserCopyMail([
+                'request' => $saved,
+                'ai'      => $aiResult,
+            ])
+        );
 
         // 5) Ответ API
         return [
-            'id'        => $saved->id,
-            'sentiment' => $saved->sentiment,
-            'reply'     => $saved->ai_reply,
-            'ai_used'   => $saved->ai_used,
+            'id'        => $saved['id'],
+            'sentiment' => $saved['sentiment'],
+            'reply'     => $saved['ai_reply'],
+            'ai_used'   => $saved['ai_used'],
         ];
     }
 }
