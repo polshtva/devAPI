@@ -55,7 +55,8 @@ form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     resultBox.classList.remove('hidden');
-    resultBox.innerHTML = 'Отправка...';
+    resultBox.className = "mt-6 p-4 rounded-lg text-sm whitespace-pre-wrap bg-white/10 text-white";
+    resultBox.innerHTML = "Отправка...";
 
     try {
         const response = await fetch('/api/contact', {
@@ -73,13 +74,35 @@ form.addEventListener('submit', async (e) => {
         });
 
         const text = await response.text();
-        resultBox.innerHTML = text;
+
+        // Попробуем распарсить JSON
+        let json;
+        try {
+            json = JSON.parse(text);
+        } catch {
+            json = null;
+        }
+
+        if (!response.ok) {
+            resultBox.className = "mt-6 p-4 rounded-lg text-sm whitespace-pre-wrap bg-red-500/20 border border-red-400 text-red-200";
+            resultBox.innerHTML = json
+                ? JSON.stringify(json, null, 2)
+                : text;
+            return;
+        }
+
+        resultBox.className = "mt-6 p-4 rounded-lg text-sm whitespace-pre-wrap bg-green-500/20 border border-green-400 text-green-200";
+        resultBox.innerHTML = json
+            ? JSON.stringify(json, null, 2)
+            : text;
 
     } catch (err) {
-        resultBox.innerHTML = 'Ошибка: сервер недоступен\n' + err;
+        resultBox.className = "mt-6 p-4 rounded-lg text-sm whitespace-pre-wrap bg-red-500/20 border border-red-400 text-red-200";
+        resultBox.innerHTML = "Ошибка: сервер недоступен\n" + err;
     }
 });
 </script>
+
 
 </body>
 </html>
