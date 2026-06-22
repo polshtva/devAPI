@@ -97,7 +97,7 @@ form.addEventListener('submit', async (e) => {
             : text;
 
     } catch (err) {
-        resultBox.className = "mt-6 p-4 rounded-lg text-sm whitespace-pre-wrap bg-red-500/20 border border-red-400 text-red-200";
+        resultBox.className = "mt-6 p-1 rounded-lg text-sm whitespace-pre-wrap bg-red-500/20 border border-red-400 text-red-200";
         resultBox.innerHTML = "Ошибка: сервер недоступен\n" + err;
     }
 });
