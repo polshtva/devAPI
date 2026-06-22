@@ -25,12 +25,14 @@ class ContactRequestRepository
             'id'         => $id,
             'name'       => $data['name'] ?? null,
             'email'      => $data['email'] ?? null,
+            'phone'      => $data['phone'] ?? null,   // ← ДОБАВИТЬ
             'comment'    => $data['comment'] ?? null,
             'sentiment'  => $data['sentiment'] ?? null,
             'ai_reply'   => $data['ai_reply'] ?? null,
             'ai_used'    => $data['ai_used'] ?? false,
             'created_at' => now()->toDateTimeString(),
         ];
+
 
         $items[] = $entry;
 

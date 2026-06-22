@@ -2,7 +2,7 @@
 
 <p><strong>Имя:</strong> {{ $data['request']['name'] }}</p>
 <p><strong>Email:</strong> {{ $data['request']['email'] }}</p>
-<p><strong>Телефон:</strong> {{ $data['request']['phone'] }}</p>
+<p><strong>Телефон:</strong> {{ $data['request']['phone'] ?? '—' }}</p>
 <p><strong>Сообщение:</strong> {{ $data['request']['comment'] }}</p>
 
 <hr>
