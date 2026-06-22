@@ -18,9 +18,12 @@ class ContactService
     public function handle(array $data): array
     {
         // 1) AI анализ + ответ
-        $aiResult = $this->ai->analyzeAndReply($data['comment'], $data['name']);
+        $aiResult = $this->ai->analyzeAndReply(
+            $data['comment'],
+            $data['name']
+        );
 
-        // 2) Сохраняем в файл (НЕ в БД)
+        // 2) Сохраняем в JSON-файл
         $saved = $this->repo->create([
             ...$data,
             'sentiment' => $aiResult['sentiment'],
@@ -28,7 +31,7 @@ class ContactService
             'ai_used'   => $aiResult['ai_used'],
         ]);
 
-        // 3) Письмо владельцу
+        // 3) Письмо владельцу сайта
         Mail::to(config('mail.owner.address'))->send(
             new ContactOwnerMail([
                 'request' => $saved,
@@ -36,13 +39,15 @@ class ContactService
             ])
         );
 
-        // 4) Копия пользователю
-        Mail::to($saved['email'])->send(
-            new ContactUserCopyMail([
-                'request' => $saved,
-                'ai'      => $aiResult,
-            ])
-        );
+        // 4) Письмо пользователю — только если email указан
+        if (!empty($saved['email'])) {
+            Mail::to($saved['email'])->send(
+                new ContactUserCopyMail([
+                    'request' => $saved,
+                    'ai'      => $aiResult,
+                ])
+            );
+        }
 
         // 5) Ответ API
         return [
